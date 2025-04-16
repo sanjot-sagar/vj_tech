@@ -55,8 +55,9 @@ The following libraries are required:
 ### 1. Create and Activate a Conda Environment
 
 ```bash
-conda create -n coco-seg python=3.10
-conda activate coco-seg
+conda create -n coco-seg1 python=3.9 -y
+conda activate coco-seg1
+
 ```
 
 ### 2. Install `uv` for Dependency Management
@@ -65,18 +66,17 @@ conda activate coco-seg
 pip install uv
 ```
 
-### 3. Install `pycocotools` Manually (for macOS Apple Silicon)
+### 3. Install `pycocotools` and dependencies
 
 ```bash
-pip install cython
-pip install git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI
+uv pip install numpy pillow tqdm matplotlib requests pycocotools
+
 ```
 
 ### 4. Install Remaining Dependencies with `uv`
 
 ```bash
 uv pip compile opencv-python numpy matplotlib Pillow tqdm torch torchvision torchaudio pytorch-lightning
-uv pip sync requirements.txt
 ```
 
 ---
@@ -110,7 +110,7 @@ python prepare_dataset.py \
 - **Overlapping masks:**
     - Overlapping masks of the same class: 
         - For semantic segmentation, a union of all overlapping regions of the same class is done.
-        - For instance segmentation, track each object individually (TBD)
+        - For instance segmentation, track each object individually 
     - Overlapping masks of different classes: Handled using a hybrid priority-area strategy where larger objects and higher-priority classes retain their regions, smaller or lower-priority ones are clipped.
 
 You want a union of all overlapping regions of the same class.
@@ -137,10 +137,9 @@ This enables quick verification that the mask generation process is correct.
 Task 2 involves training an image segmentation model using PyTorch Lightning. The model can be switched to GPU mode if desired using a runtime flag in your training script.
 
 ### Key Points:
-- **Model Architecture:** Choose a suitable architecture (e.g., UNet, DeepLabV3). Modify the training script for your needs.
+- **Model Architecture:** script runs for fastscnn, deeplabv3 and u-net
 - **Metrics:** Model performance is evaluated using IoU, Dice Coefficient, and pixel accuracy.
-- **Monitoring:** Training metrics are tracked using TensorBoard or WandB.
-- **Runtime Configuration:** By default, the code is set to run on CPU but includes a flag to switch to GPU.
+- **Monitoring:** Training metrics are tracked using TensorBoard 
 
 (Please refer to the separate files for detailed model implementation and training scripts.)
 
@@ -150,16 +149,15 @@ Task 2 involves training an image segmentation model using PyTorch Lightning. Th
 
 <!-- ### Data Preparation
 
-1. **Download the COCO 2017 subset** and annotations:
+1. you must execute task 1 first
+``` -->
+
+Install dependencies 
 
 ```bash
-mkdir -p data/coco && cd data/coco
-wget http://images.cocodataset.org/zips/val2017.zip
-wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip
-unzip val2017.zip
-unzip annotations_trainval2017.zip
-``` -->
-### Data Preparation
+uv pip install torch torchvision pillow numpy segmentation-models-pytorch tensorboard
+
+```
 
 Just run the following to automatically download, extract, and process the COCO dataset:
 
@@ -167,32 +165,47 @@ Just run the following to automatically download, extract, and process the COCO 
 python prepare_dataset.py
 ```
 
-**To customize inputs::**
+
+
+### Model Training and inference
 
 ```bash
-python prepare_dataset.py \
-  --ann data/coco/annotations/instances_val2017.json \
-  --img_dir data/coco/val2017 \
-  --out_dir data/coco/val2017_masks \
-  --visualize 3
+python train.py
+```
+---
+Absolutely, here's a succinct, copy-paste-ready section for your `README.md`:
+
+---
+
+##  Training Script: `train.py`
+
+Run the training with configurable options:
+
+```bash
+python train.py --data_root /path/to/coco --models unet deeplabv3 --gpu 0 --lr 1e-4 --batch_size 8 --epochs 25
 ```
 
-### Model Training
+### 🔧 Arguments
 
-(Instructions for training the segmentation model using PyTorch Lightning go here. Ensure your training scripts handle both CPU and GPU modes.)
+- `--data_root`: Path to dataset root (default: `/scratch/sanjotst/vjtech/data/coco`)
+- `--models`: Space-separated list of models to train. Options: `unet`, `deeplabv3`, `fastscnn`
+- `--gpu`: GPU index to use (default: `0`)
+- `--lr`: Learning rate (default: `1e-6`)
+- `--batch_size`: Batch size (default: `8`)
+- `--epochs`: Number of training epochs (default: `20`)
+
+You can train multiple models in one run by passing them together via `--models`.
+
+--- 
+the file structure is as 
+runs/
+└── {model}_{metric}_{timestamp}/
+    ├── train/               # TensorBoard logs for training
+    ├── val/                 # TensorBoard logs for validation
+    ├── models/              # Saved model checkpoints (.pth)
+    ├── metrics_first_iter.txt  # Metrics after first iteration
+    └── final_metrics.txt       # Metrics after final epoch
+.
 
 ---
-
-## Reproducibility
-
-The project is set up to be reproducible:
-- **Dependencies:** Managed via `uv` with a pinned `requirements.txt`.
-- **Instructions:** Clear instructions are provided to download and process the dataset.
-- **Environment:** Tested on macOS (Apple Silicon) using a Conda setup.
-
-Please refer to each script’s documentation and inline comments for further details.
-
----
-
-Enjoy working on your assignment!
 
