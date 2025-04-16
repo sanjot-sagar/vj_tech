@@ -209,3 +209,4 @@ runs/
 
 ---
 
+Tensorboard plots are included in the results pdf file
